@@ -1,5 +1,7 @@
-language: python3
-python3:
+language: python
+python:
     - "3.5"
 
+install: pip install --user -r requirements.txt
+script: python -m unittest
 sudo: false
