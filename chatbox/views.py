@@ -16,7 +16,7 @@ def add_message():
     Post a message to the chatroom, by adding it to our message queue.
     """
     try:
-        message_data = request.json
+        message_data = request.get_json()
     except BadRequest:
         # The JSON was malformed in some way.
         try:
