@@ -8,6 +8,7 @@ It's written in Python/Flask, using Gunicorn as a production server.
 
 
 It's made for multiple purposes:
+
      * Unit-testing (full coverage)
      * Functional testing
      * End-to-end testing w/Selenium
