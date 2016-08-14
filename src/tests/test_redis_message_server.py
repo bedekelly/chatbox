@@ -24,6 +24,7 @@ class TestRedisMessageServer(TestCase):
         Ensure that we have a working Redis client connected to the server.
         """
         self.redis_client = redis.StrictRedis()
+        app.config["REDIS_DB"] = 1
         try:
             self.redis_client.ping()
         except ConnectionError:
@@ -113,8 +114,8 @@ class TestRedisMessageServer(TestCase):
         message_server.clear_messages()
         self.assertEqual(len(list(message_server.get_messages(100))), 0)
 
-    def test_subscribe(self):
+    def tearDown(self):
         """
-        unit-test:
-        Test that subscribing to messages will
+        On teardown, make sure our test database is clear.
         """
+        RedisMessageServer().clear_messages()
