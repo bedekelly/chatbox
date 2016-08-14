@@ -13,16 +13,16 @@ RUN apt-get update     &&         \
            /tmp/*                 \
            /var/tmp/*
 
-# Configure nginx.
-COPY ops/nginx.conf /etc/nginx/nginx.conf
-
 # Install python dependencies.
-COPY ops/requirements.txt /tmp/
+COPY ops/config/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
+
+# Configure nginx.
+COPY ops/config/nginx.conf /etc/nginx/nginx.conf
 
 # Copy our source code.
 COPY src /src
-COPY scripts /scripts
+COPY ops/scripts /scripts
 
 WORKDIR /src
 CMD nginx && bash /scripts/prod_run.sh
