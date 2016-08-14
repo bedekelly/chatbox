@@ -28,7 +28,9 @@ class RedisMessageServer:
         """
         msg_string = json.dumps(msg)
         self.redis_client.publish(self.message_channel, msg_string)
-        self.redis_client.rpush(self.message_list, msg_string)
+        self.redis_client.lpush(self.message_list, msg_string)
+        self.redis_client.ltrim(self.message_list, 0,
+                                app.config["MAX_MESSAGES"]-1)
 
     def subscribe(self):
         """
@@ -46,7 +48,7 @@ class RedisMessageServer:
         :param max_messages:
         :return:
         """
-        raw = self.redis_client.lrange(self.message_list, -max_messages, -1)
+        raw = self.redis_client.lrange(self.message_list, 0, max_messages)
         messages = (m for m in raw if m != b"null")
         messages = (m.decode("utf-8") for m in messages)
         yield from map(json.loads, messages)

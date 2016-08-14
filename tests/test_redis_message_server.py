@@ -1,14 +1,19 @@
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY
 
 import redis
-from messages import RedisMessageServer
-from sse_utils import is_valid_sse
+from chatbox import app
+from chatbox.messages import RedisMessageServer
+from chatbox.sse_utils import is_valid_sse
+
 
 EXAMPLE_SUBSCRIBE_ITEMS = [
     {"data": b"""{"author": "bede", "message": "Hello, world!"}"""},
     {"data": b"""{"author": "jack", "message": "Goodbye, world!"}"""}
 ]
+
+EXAMPLE_MESSAGE = {"author": "bede", "message": "Hello, world!"}
+EXAMPLE_MESSAGE2 = {"author": "bede2", "message": "Hola, mundo!"}
 
 
 class TestRedisMessageServer(TestCase):
@@ -22,11 +27,12 @@ class TestRedisMessageServer(TestCase):
         try:
             self.redis_client.ping()
         except ConnectionError:
-            self.fail("Redis server not running!")
+            raise ConnectionError("Redis server not running!")
 
     @patch.object(RedisMessageServer, "subscribe")
     def test_event_stream(self, subscribe):
         """
+        functional-test:
         Test that the event_stream property yields a modified SSE stream.
         This means that each item in the stream should be a correctly-formed
         SSE containing the data from the subscribe() method.
@@ -40,18 +46,75 @@ class TestRedisMessageServer(TestCase):
             # Check it contains the subscription data.
             self.assertIn(subscribe_item["data"], stream_item)
 
-    @patch.object(RedisMessageServer, "redis_client")
-    def test_add_message(self, mock_redis_client):
-        mock_redis_client.publish.assert_called_once_with(
+    def test_add_message(self):
+        """
+        unit-test:
+        Test that adding a message will do three things: publish it to the
+        redis channel, push it to the message list, and truncate that message
+        list to MAX_MESSAGES as defined in settings.py.
+        """
+        # 1. Check we're publishing something to the redis pubsub channel.
+        mock_server = MagicMock()
+        mock_server.message_channel = "MSG_CHANNEL"
+        mock_server.message_list = "MSG_LIST"
+        msg_string = '{"author": "bede", "message": "Hello, world!"}'
 
-            """{"data": b'{"author": "bede", "message": "Hello, world!"}'}"""
+        # noinspection PyCallByClass,PyTypeChecker
+        RedisMessageServer.add_message(mock_server, EXAMPLE_MESSAGE)
+        mock_server.redis_client.publish.assert_called_once_with(
+            "MSG_CHANNEL", msg_string
         )
 
-    def test_subscribe(self):
-        self.fail()
+        # 2. Check we're pushing the message to the message list.
+        mock_server.redis_client.lpush.assert_called_with(
+            "MSG_LIST", msg_string
+        )
 
-    def test_get_messages(self):
-        self.fail()
+        # 3. Check we're truncating the list to MAX_MESSAGES.
+        mock_server.redis_client.ltrim.assert_called_with(
+            "MSG_LIST", 0, app.config["MAX_MESSAGES"]-1
+        )
+
+    def test_adding_message_end2end(self):
+        """
+        functional-test:
+        Test that adding a message will make it visible on the Redis server.
+        """
+        message_server = RedisMessageServer()
+        message_server.add_message(EXAMPLE_MESSAGE2)
+        msg, *_ = list(message_server.get_messages(1))
+        self.assertEqual(msg, EXAMPLE_MESSAGE2)
+
+    def test_messages_are_truncated(self):
+        """
+        functional-test:
+        Test that adding more messages than MAX_MESSAGES means that some
+        will be truncated from the end, so that at most MAX_MESSAGES are
+        stored in the Redis database.
+        """
+        app.config["MAX_MESSAGES"] = 3
+        message_server = RedisMessageServer()
+        message_server.add_message(EXAMPLE_MESSAGE2)
+        for msg in range(3):
+            message_server.add_message(EXAMPLE_MESSAGE)
+        msgs = list(message_server.get_messages(5))
+        self.assertEqual(len(msgs), 3)
 
     def test_clear_messages(self):
-        self.fail()
+        """
+        functional-test:
+        Test that clearing messages does what it says on the tin.
+        """
+        message_server = RedisMessageServer()
+        message_server.clear_messages()
+        message_server.add_message(EXAMPLE_MESSAGE)
+        message_server.add_message(EXAMPLE_MESSAGE2)
+        self.assertEqual(len(list(message_server.get_messages(100))), 2)
+        message_server.clear_messages()
+        self.assertEqual(len(list(message_server.get_messages(100))), 0)
+
+    def test_subscribe(self):
+        """
+        unit-test:
+        Test that subscribing to messages will
+        """
