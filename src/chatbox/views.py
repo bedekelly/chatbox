@@ -1,6 +1,7 @@
-from chatbox.messages import RedisMessageServer
 from flask import request, Response, jsonify
+
 from . import app
+from .messages import RedisMessageServer
 
 
 @app.route("/messages", methods=["POST"])
