@@ -24,5 +24,5 @@ COPY ops/config/nginx.conf /etc/nginx/nginx.conf
 COPY src /src
 COPY ops/scripts /scripts
 
-WORKDIR /src
-CMD nginx && bash /scripts/prod_run.sh
+WORKDIR /src/
+CMD nginx && cd /src/src && gunicorn chatbox:app --workers 9 -k "eventlet"
