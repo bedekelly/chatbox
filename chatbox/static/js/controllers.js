@@ -47,7 +47,7 @@ angular.module("chatboxApp").controller(
             $http.get("/messages", {
                 params: {"max": n}
             }).then(function(response) {
-                $scope.messages = response.data;
+                $scope.messages = response.data.slice().reverse();
             });
         };
 
