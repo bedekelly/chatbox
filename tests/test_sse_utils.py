@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from sse_utils import is_valid_sse
+from chatbox.sse_utils import is_valid_sse
 
 
 class TestIsValidSSE(TestCase):
