@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="chatboxApp">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.1.0.js"
+            integrity="sha256-slogkvB1K3VOkzAI8QITxV3VzpOnkeNVsKvtkYLMjfk="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.8/angular.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/controllers.js"></script>
+    <title>Title</title>
+</head>
+
+<body data-ng-controller="chatboxCtrl as ctrl">
+    <h2>Messages:</h2>
+
+    <ul> <!-- Repeat through every message. -->
+        <li data-ng-repeat="msg in messages">
+            <strong>{{ msg.author }}</strong>: {{ msg.message }}
+        </li>
+    </ul>
+
+    <!-- Submit a new message. -->
+    <form name="messageForm">
+        <label for="author">Username</label>
+        <input type="text" data-ng-model="author" name="author" required />
+
+        <label for="message">Message</label>
+        <input type="text" data-ng-model="message" name="message" required />
+
+        <input type="submit" data-ng-click="ctrl.onSendClicked()" value="Submit"
+         data-ng-disabled="messageForm.$invalid"/>
+    </form>
+</body>
+</html>
