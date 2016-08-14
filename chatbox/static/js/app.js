@@ -1,1 +1,6 @@
-angular.module("chatboxApp", []);
+angular.module("chatboxApp", [])
+    .filter('reverse', function() {
+        return function(items) {
+            return items.slice().reverse();
+        };
+    });
