@@ -7,4 +7,3 @@ services:
 
 install: pip install -r requirements.txt
 script: cd src;python -m unittest
-deploy: docker build . -t bedekelly/chatbox && docker push bedekelly/chatbox
